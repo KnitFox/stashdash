@@ -120,6 +120,12 @@ function handleViewChange(event) {
     importData(event.target.files[0]);
     event.target.value = "";
   }
+
+  if (event.target.id === "photoScan") {
+    const file = event.target.files[0];
+    if (file) handlePhotoScan(file);
+    event.target.value = "";
+  }
 }
 
 function navigate(route) {
@@ -331,6 +337,22 @@ function renderYarnForm(yarn = null) {
         </div>
       </div>
 
+      <div class="photo-section">
+        <div class="photo-section-header">
+          <i data-lucide="scan-line" style="width:13px;height:13px" aria-hidden="true"></i>
+          Aus Foto befüllen
+        </div>
+        <p class="photo-section-hint">Knäuel-Label fotografieren – Text und Farbton werden automatisch erkannt</p>
+        <div class="photo-row">
+          <label class="secondary-button" style="cursor:pointer">
+            <i data-lucide="camera" style="width:14px;height:14px;flex-shrink:0" aria-hidden="true"></i>
+            Foto auswählen
+            <input type="file" accept="image/*" id="photoScan" class="visually-hidden">
+          </label>
+          <span id="ocrStatus" class="ocr-status" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+
       <div class="form-grid">
         <label>
           <span>Hersteller</span>
@@ -399,6 +421,8 @@ function renderYarnForm(yarn = null) {
       </div>
     </form>
   `;
+
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderYarn(yarnId, tab = "stock") {
@@ -1123,4 +1147,180 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => {
     elements.toast.classList.remove("is-visible");
   }, 3200);
+}
+
+// ---- Foto-Erkennung: OCR + Farbton ----
+
+async function handlePhotoScan(file) {
+  const statusEl = document.getElementById("ocrStatus");
+  if (!statusEl) return;
+
+  statusEl.className = "ocr-status";
+  statusEl.textContent = "Bild wird geladen…";
+
+  try {
+    const [colorHex, ocrText] = await Promise.all([
+      detectDominantColor(file),
+      runOCR(file, (pct) => {
+        if (document.getElementById("ocrStatus")) {
+          statusEl.textContent = `Texterkennung … ${pct} %`;
+        }
+      })
+    ]);
+
+    const form = document.getElementById("yarnForm");
+    if (!form) return;
+
+    const extracted = extractYarnDataFromText(ocrText);
+    let filled = 0;
+
+    const fieldMap = {
+      manufacturer: "manufacturer",
+      name:         "name",
+      colorNumber:  "colorNumber",
+      needleSize:   "needleSize",
+      fiber:        "fiber"
+    };
+
+    for (const [key, fieldName] of Object.entries(fieldMap)) {
+      if (!extracted[key]) continue;
+      const input = form.querySelector(`[name="${fieldName}"]`);
+      if (input && !input.value.trim()) {
+        input.value = extracted[key];
+        filled++;
+      }
+    }
+
+    if (extracted.weightPerSkein) {
+      const inp = form.querySelector("[name='weightPerSkein']");
+      if (inp && !inp.value.trim()) { inp.value = extracted.weightPerSkein; filled++; }
+    }
+    if (extracted.lengthPerSkein) {
+      const inp = form.querySelector("[name='lengthPerSkein']");
+      if (inp && !inp.value.trim()) { inp.value = extracted.lengthPerSkein; filled++; }
+    }
+
+    if (colorHex) {
+      const colorInput = form.querySelector("[name='colorHex']");
+      if (colorInput) { colorInput.value = colorHex; filled++; }
+    }
+
+    if (!document.getElementById("ocrStatus")) return;
+
+    if (filled > 0) {
+      statusEl.className = "ocr-status success";
+      statusEl.textContent = `${filled} Feld${filled === 1 ? "" : "er"} bef\xFCllt`;
+    } else {
+      statusEl.className = "ocr-status";
+      statusEl.textContent = "Keine Informationen erkannt";
+    }
+  } catch (err) {
+    console.error(err);
+    const el = document.getElementById("ocrStatus");
+    if (el) {
+      el.className = "ocr-status error";
+      el.textContent = "Erkennung fehlgeschlagen";
+    }
+  }
+}
+
+async function runOCR(imageFile, onProgress) {
+  if (typeof Tesseract === "undefined") {
+    throw new Error("Tesseract nicht geladen");
+  }
+  const { data: { text } } = await Tesseract.recognize(imageFile, "eng+deu", {
+    logger(m) {
+      if (m.status === "recognizing text" && typeof m.progress === "number") {
+        onProgress(Math.round(m.progress * 100));
+      }
+    }
+  });
+  return text;
+}
+
+function detectDominantColor(imageFile) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(imageFile);
+    img.onload = () => {
+      const maxPx = 140;
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const counts = {};
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+        if (a < 200) continue;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const saturation = max > 0 ? (max - min) / max : 0;
+        const brightness = max / 255;
+        if (brightness > 0.92 || brightness < 0.06 || saturation < 0.07) continue;
+        const rq = Math.round(r / 24) * 24;
+        const gq = Math.round(g / 24) * 24;
+        const bq = Math.round(b / 24) * 24;
+        const key = `${rq},${gq},${bq}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+
+      let bestKey = null, bestCount = 0;
+      for (const [k, n] of Object.entries(counts)) {
+        if (n > bestCount) { bestCount = n; bestKey = k; }
+      }
+
+      if (!bestKey) { resolve(null); return; }
+      const [r, g, b] = bestKey.split(",").map(Number);
+      resolve("#" + [r, g, b].map((v) => Math.min(255, v).toString(16).padStart(2, "0")).join(""));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
+function extractYarnDataFromText(rawText) {
+  const text = rawText.replace(/\r/g, "").trim();
+  const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 1);
+  const result = {};
+
+  // Gewicht: "50 g", "100g", "50 Gramm"
+  const wMatch = text.match(/\b(\d+(?:[.,]\d+)?)\s*g(?:ramm)?\b/i);
+  if (wMatch) result.weightPerSkein = parseFloat(wMatch[1].replace(",", "."));
+
+  // Lauflänge: "200 m", "400m", "200 Meter" – nicht "3,5 mm"
+  const lMatch = text.match(/\b(\d{2,}(?:[.,]\d+)?)\s*m(?:eter)?\b(?!\s*m)/i);
+  if (lMatch) result.lengthPerSkein = parseFloat(lMatch[1].replace(",", "."));
+
+  // Nadelstärke: "3,5 mm", "4-5 mm", "Nadelstärke 3,5"
+  const nMatch =
+    text.match(/(?:nadel(?:st[äa]rke|gr[öo]sse?)?|needle)[^\d]*(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?)\s*(?:mm)?/i) ||
+    text.match(/\b(\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?)\s*mm\b/i);
+  if (nMatch) {
+    const raw = nMatch[1].replace(",", ".").trim();
+    result.needleSize = raw + " mm";
+  }
+
+  // Faser: "100% Wolle", "80% Merino / 20% Polyamid"
+  const fMatch = text.match(/\d+\s*%\s*[\wÀ-ɏ-]+(?:\s*[\/+]\s*\d+\s*%\s*[\wÀ-ɏ-]+)*/i);
+  if (fMatch) result.fiber = fMatch[0].trim();
+
+  // Farbnummer: "Farb-Nr. 1234", "Color No. A123", freistehende 4-5-stellige Zahl
+  const cnMatch =
+    text.match(/(?:farb(?:nummer|nr\.?|no\.?)|colou?r(?:\s*no\.?|\s*nr\.?)?)[:\s#]*([A-Z]?\d{3,6}[A-Z]?)/i) ||
+    text.match(/(?:^|\s)([A-Z]?\d{4,5}[A-Z]?)(?:\s|$)/m);
+  if (cnMatch) result.colorNumber = cnMatch[1].trim();
+
+  // Hersteller + Garnname aus den ersten sinnvollen Zeilen
+  const specRe = /\d+\s*%|\d+\s*g\b|\d+\s*m\b|\d+\s*mm\b|nadel|needle|www\.|©|®|made in/i;
+  const textLines = lines.filter((l) => !specRe.test(l) && l.length > 2 && l.length < 60);
+  if (textLines[0]) result.manufacturer = textLines[0];
+  if (textLines[1]) result.name = textLines[1];
+
+  return result;
 }
