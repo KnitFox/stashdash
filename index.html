@@ -1,57 +1,65 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="StashDash verwaltet deinen Wollstash direkt im Browser mit lokal gespeicherten Daten." />
-  <title>StashDash</title>
-  <link rel="stylesheet" href="./styles.css" />
-  <script src="./data.js" defer></script>
-  <script src="./app.js" defer></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="StashDash verwaltet deinen Wollstash direkt im Browser mit lokal gespeicherten Daten." />
+<title>StashDash</title>
+<link rel="stylesheet" href="./styles.css" />
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="./data.js" defer></script>
+<script src="./app.js" defer></script>
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <header class="app-header">
-      <div class="header-copy">
-        <p class="eyebrow">Wollstash Manager</p>
-        <h1 id="title">Dashboard</h1>
-        <p id="subtitle" class="subtitle">Dein Garnbestand bleibt lokal in diesem Browser gespeichert.</p>
-      </div>
-      <div class="header-actions">
-        <button id="quickAdd" class="primary-button" type="button">Neues Garn</button>
-      </div>
-    </header>
+<div id="app" class="app-shell">
+  <header class="app-header">
+    <div class="header-copy">
+      <p class="eyebrow">Wollstash Manager</p>
+      <h1 id="title">Dashboard</h1>
+      <p id="subtitle" class="subtitle">Dein Garnbestand bleibt lokal in diesem Browser gespeichert.</p>
+    </div>
+    <div class="header-actions">
+      <button id="quickAdd" class="primary-button" type="button">
+        <i data-lucide="plus" style="width:16px;height:16px;flex-shrink:0" aria-hidden="true"></i>
+        Neues Garn
+      </button>
+    </div>
+  </header>
 
-    <main id="view" tabindex="-1"></main>
+  <main id="view" tabindex="-1"></main>
 
-    <nav class="bottom-nav" data-nav aria-label="Hauptnavigation">
-      <button type="button" data-page="dashboard">
-        <span class="nav-kicker">01</span>
-        <span>Dashboard</span>
-      </button>
-      <button type="button" data-page="stash">
-        <span class="nav-kicker">02</span>
-        <span>Stash</span>
-      </button>
-      <button type="button" data-page="add">
-        <span class="nav-kicker">03</span>
-        <span>Neu</span>
-      </button>
-      <button type="button" data-page="stats">
-        <span class="nav-kicker">04</span>
-        <span>Stats</span>
-      </button>
-      <button type="button" data-page="settings">
-        <span class="nav-kicker">05</span>
-        <span>Setup</span>
-      </button>
-    </nav>
+  <nav class="bottom-nav" data-nav aria-label="Hauptnavigation">
+    <button type="button" data-page="dashboard">
+      <i data-lucide="layout-dashboard" aria-hidden="true"></i>
+      <span>Dashboard</span>
+    </button>
+    <button type="button" data-page="stash">
+      <i data-lucide="package" aria-hidden="true"></i>
+      <span>Stash</span>
+    </button>
+    <button type="button" data-page="add">
+      <i data-lucide="plus-circle" aria-hidden="true"></i>
+      <span>Neu</span>
+    </button>
+    <button type="button" data-page="stats">
+      <i data-lucide="bar-chart-2" aria-hidden="true"></i>
+      <span>Stats</span>
+    </button>
+    <button type="button" data-page="settings">
+      <i data-lucide="settings" aria-hidden="true"></i>
+      <span>Setup</span>
+    </button>
+  </nav>
 
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
 
-  <noscript>
-    <div class="noscript">StashDash benötigt JavaScript, um deinen lokalen Wollstash zu verwalten.</div>
-  </noscript>
+<noscript>
+  <div class="noscript">StashDash benötigt JavaScript, um deinen lokalen Wollstash zu verwalten.</div>
+</noscript>
+
+<script>
+  lucide.createIcons();
+</script>
 </body>
 </html>
