@@ -65,10 +65,10 @@
     .tab-btn { @apply flex-1 py-2 px-2 text-sm font-medium text-fore-muted border-b-2 border-transparent cursor-pointer bg-transparent transition-all hover:text-fore; }
     .tab-btn.is-active { @apply text-accent border-accent-dim; }
     .stepper-btn { @apply flex items-center justify-center w-10 h-9 bg-elevated text-fore-muted hover:bg-hover-bg hover:text-fore transition-colors cursor-pointer flex-shrink-0 text-base font-medium; }
-    .nav-btn { @apply flex-1 flex flex-col items-center gap-1 py-2.5 px-1 bg-transparent border-none cursor-pointer text-fore-subtle text-[10px] font-medium transition-colors relative hover:text-fore-muted; }
+    .nav-btn { @apply flex-1 flex flex-col items-center gap-1 py-2.5 px-1 bg-transparent border-none cursor-pointer text-fore-subtle text-xs font-medium transition-colors relative hover:text-fore-muted; }
     .nav-btn.is-active { @apply text-accent; }
-    .nav-btn.is-active::before { content: ''; @apply absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-accent-dim rounded-b; }
-    .nav-btn svg, .nav-btn .lucide { @apply w-5 h-5; stroke-width: 1.75; }
+    .nav-btn.is-active::before { content: ''; @apply absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-accent-dim rounded-b; }
+    .nav-btn svg, .nav-btn .lucide { @apply w-6 h-6; stroke-width: 1.75; }
     .pill-sm { @apply text-[10px] font-medium text-fore-subtle bg-elevated rounded-full px-2 py-0.5; }
   }
 </style>
@@ -97,7 +97,7 @@
 
   <main id="view" class="flex-1 p-5 outline-none" style="padding-bottom:calc(5rem + env(safe-area-inset-bottom))" tabindex="-1"></main>
 
-  <nav class="fixed bottom-0 inset-x-0 z-20 bg-surface border-t border-accent/20" aria-label="Hauptnavigation">
+  <nav id="main-nav" class="fixed bottom-0 z-20 bg-surface border-t border-accent/20" style="left:0;right:0" aria-label="Hauptnavigation">
     <div class="flex max-w-2xl mx-auto" style="padding-bottom:env(safe-area-inset-bottom)" data-nav>
       <button type="button" data-page="dashboard" class="nav-btn"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>Dashboard</span></button>
       <button type="button" data-page="stash"     class="nav-btn"><i data-lucide="package"          aria-hidden="true"></i><span>Stash</span></button>

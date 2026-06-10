@@ -27,6 +27,7 @@ function init() {
   elements.nav      = document.querySelector("[data-nav]");
   elements.quickAdd = document.getElementById("quickAdd");
   elements.toast    = document.getElementById("toast");
+  elements.mainNav  = document.getElementById("main-nav");
 
   elements.nav.addEventListener("click", handleNavClick);
   elements.quickAdd.addEventListener("click", () => navigate("add"));
@@ -35,6 +36,21 @@ function init() {
   elements.view.addEventListener("input",  handleViewInput);
   elements.view.addEventListener("change", handleViewChange);
   window.addEventListener("hashchange", renderRoute);
+
+  if (window.visualViewport) {
+    const vp = window.visualViewport;
+    const pinNav = () => {
+      const nav = elements.mainNav;
+      if (!nav) return;
+      const ty = Math.max(0, window.innerHeight - vp.height - vp.offsetTop);
+      nav.style.left      = vp.offsetLeft + "px";
+      nav.style.width     = vp.width + "px";
+      nav.style.right     = "auto";
+      nav.style.transform = ty ? `translateY(${-ty}px)` : "";
+    };
+    vp.addEventListener("resize", pinNav);
+    vp.addEventListener("scroll", pinNav);
+  }
 
   if (!window.location.hash) { replaceHash("dashboard"); return; }
   renderRoute();
