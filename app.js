@@ -120,6 +120,7 @@ function replaceHash(route) {
 }
 
 function renderRoute() {
+  if (elements.view) elements.view.scrollTop = 0;
   const r = parseRoute();
   uiState.page=r.page; uiState.yarnId=r.yarnId||null; uiState.tab=r.tab||"stock";
   updateNav();
@@ -194,7 +195,7 @@ function renderStash() {
     <div class="crd no-hover flex gap-3 flex-wrap items-end mb-3">
       <label class="flex-1 min-w-36">
         <span class="fld-lbl">Suchen</span>
-        <input id="stashSearch" type="search" class="fld" value="${escA(uiState.search)}" placeholder="Hersteller, Farbe, Faser …" autocomplete="off" />
+        <input id="stashSearch" type="search" class="fld" value="${escA(uiState.search)}" placeholder="Hersteller, Farbe, Faser …" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
       </label>
       <div class="flex gap-2 items-end min-w-36">
         <label class="flex-1">
@@ -945,10 +946,11 @@ function escH(v) { return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;
 function escA(v) { return escH(v); }
 
 function showToast(msg) {
+  const base="bottom:calc(4rem + env(safe-area-inset-bottom));";
   elements.toast.textContent=msg;
-  elements.toast.style.cssText="opacity:1;transform:translateX(-50%) translateY(0)";
+  elements.toast.style.cssText=base+"opacity:1;transform:translateX(-50%) translateY(0)";
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>{ elements.toast.style.cssText="opacity:0;transform:translateX(-50%) translateY(10px)"; },3200);
+  toastTimer=setTimeout(()=>{ elements.toast.style.cssText=base+"opacity:0;transform:translateX(-50%) translateY(10px)"; },3200);
 }
 
 // ── Color detection ────────────────────────────────────────────────────────
