@@ -568,16 +568,12 @@ function importExcel(file) {
 function splitColorField(str) {
   if (!str) return {name:"",number:""};
   str = str.trim();
-  // Name SEP Number — SEP may be space, /, -, or ,
-  const m1 = str.match(/^(.+?)\s*(?:\/|\-|,)\s*(\d{3,6})\s*$/) ||
-             str.match(/^([A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß\s\-]*?)\s+(\d{3,6})\s*$/);
-  if (m1 && /[A-Za-zÄÖÜäöüß]/.test(m1[1])) return {name:m1[1].trim(), number:m1[2].trim()};
-  // Number SEP Name
-  const m2 = str.match(/^(\d{3,6})\s*(?:\/|\-|,)\s*(.+)$/) ||
-             str.match(/^(\d{3,6})\s+([A-Za-zÄÖÜäöüß].+)$/);
-  if (m2) return {name:m2[2].trim(), number:m2[1].trim()};
-  if (/^\d+$/.test(str)) return {name:"", number:str};
-  return {name:str, number:""};
+  // Extract first digit sequence as the color number
+  const numMatch = str.match(/\d+/);
+  const number = numMatch ? numMatch[0] : "";
+  // Remove digits and all non-letter chars (separators, #, /, -, etc.) to get the name
+  const name = str.replace(/\d+/g, "").replace(/[^A-Za-zÄÖÜäöüß\s]/g, " ").replace(/\s+/g, " ").trim();
+  return {name, number};
 }
 
 // Match a column header against aliases, with fallback for slash-combined headers
